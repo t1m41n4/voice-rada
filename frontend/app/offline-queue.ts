@@ -29,6 +29,7 @@ export async function pendingReports(): Promise<PendingReport[]> {
   });
   db.close(); return items;
 }
+export async function pendingReportCount(){return (await pendingReports()).length}
 
 export async function removeQueuedReport(id: string) {
   const db = await open();
