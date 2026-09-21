@@ -16,8 +16,9 @@ def client(monkeypatch):
     engine=create_engine('sqlite://',connect_args={'check_same_thread':False},poolclass=StaticPool)
     testing_session=sessionmaker(bind=engine,autoflush=False)
     Base.metadata.create_all(engine)
-    monkeypatch.setattr(users,'INITIAL_ADMIN_PASSWORD','test-password-123')
-    bootstrap=testing_session();users.ensure_initial_admin(bootstrap);bootstrap.close()
+    monkeypatch.setattr(users,'DEMO_RESPONDER_EMAIL','demo@example.test')
+    monkeypatch.setattr(users,'DEMO_RESPONDER_PASSWORD','demo-password-123')
+    bootstrap=testing_session();users.ensure_demo_responder(bootstrap);bootstrap.close()
     def override_db():
         session=testing_session()
         try:yield session

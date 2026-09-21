@@ -8,7 +8,7 @@ from app.providers.twilio import fetch_voice_recording
 from app.providers import ProviderUnavailable
 from app.providers.mapbox import MapboxGeocodingProvider
 from app.providers.openrouter import OpenRouterExtractionProvider
-from app.schemas import TextReportIn
+from app.schemas import INCIDENT_CATEGORIES,TextReportIn
 from app.services.privacy import reporter_hash
 from app.services.triage import extract_and_triage
 from app.services.spatial import set_incident_geometry
@@ -34,8 +34,9 @@ def process_report(session:Session,raw:RawReport,extraction_provider=None,geocod
     try:
         extraction=(extraction_provider or OpenRouterExtractionProvider()).extract(raw.raw_text)
         rule_category,score,level,rule_factors=extract_and_triage(raw.raw_text)
-        allowed_categories={'FLOODING','LANDSLIDE','WATER_SHORTAGE','INFRASTRUCTURE_DAMAGE','FIRE','PUBLIC_SAFETY','CROWD_ACTIVITY','THREAT_REPORTED','ELECTORAL_TENSION','COMMUNAL_TENSION','DISPLACEMENT','MEDICAL_EMERGENCY','OTHER'}
-        category=extraction.category.upper() if extraction.category.upper() in allowed_categories else rule_category
+        # IncidentExtraction is a Literal-backed model. This guard preserves a
+        # safe operational fallback for non-conforming custom providers.
+        category=extraction.category if extraction.category in INCIDENT_CATEGORIES else rule_category
         location_name=extraction.location_name or raw.location_name
         geocode=(geocoding_provider or MapboxGeocodingProvider()).geocode(location_name) if location_name else None
         incident=Incident(public_reference='VR-'+uuid.uuid4().hex[:8].upper(),raw_report_id=raw.id,category=category,description=raw.raw_text,source_type=raw.source_type,risk_level=level,risk_score=score,confidence=extraction.confidence,location_name=geocode.display_name if geocode and geocode.display_name else location_name,latitude=geocode.latitude if geocode else None,longitude=geocode.longitude if geocode else None,ai_summary=extraction.summary,ai_extraction={**extraction.model_dump(),'risk_factors':list(dict.fromkeys(extraction.risk_factors+rule_factors)),'provider':'openrouter','untrusted_input':True},processing_status='PROCESSED',content_hash=raw.content_hash)

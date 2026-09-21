@@ -6,7 +6,7 @@ Alembic runs the schema migration before the backend starts. The initial migrati
 
 `POST report → HMAC token (if supplied) → Groq transcription (audio) → OpenRouter extraction → Mapbox geocode → transparent risk rules → incident → responder verification`.
 
-Risk rules inspect reported terms such as flooding, fire, threats and injuries, plus an explicit people-affected modifier. The score is a prioritization aid, not a statement of fact. OpenRouter performs strict-schema incident extraction, Groq performs speech-to-text, and Mapbox performs Kenyan forward geocoding when their keys are configured. Providers are isolated behind adapters and their failure leaves the raw report visibly `FAILED` rather than silently fabricating a result.
+Risk rules and OpenRouter structured extraction assign exactly one operational category: `El Niño / Flood Emergency`, `Goon Activity & Intimidation`, `Electoral Tension`, or `Resource Dispute`. Highly ambiguous reports use `Resource Dispute` as a transparent operational fallback. The score is a prioritization aid, not a statement of fact. Groq performs speech-to-text, and Mapbox performs Kenyan forward geocoding when their keys are configured. Providers are isolated behind adapters and their failure leaves the raw report visibly `FAILED` rather than silently fabricating a result.
 
 The dashboard detects **emerging reporting activity** when the configured number of reports fall within the configured PostGIS geographic radius and time window. It never describes such activity as confirmed, and it does not infer a cause or identify people.
 

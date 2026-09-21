@@ -3,11 +3,11 @@ from app.providers import ProviderUnavailable
 from app.services import processing
 
 class Extraction:
-    def extract(self,text):return IncidentExtraction(category='FLOODING',summary='Reporter described flooding.',reported_event=text,location_name='Kibera',severity_indicators=['water entry'],people_affected=None,immediate_danger=None,risk_factors=['reported flooding'],confidence=.8)
+    def extract(self,text):return IncidentExtraction(category='El Niño / Flood Emergency',summary='Reporter described flooding.',reported_event=text,location_name='Kibera',severity_indicators=['water entry'],people_affected=None,immediate_danger=None,risk_factors=['reported flooding'],confidence=.8)
 class Geocoder:
     def geocode(self,location):return GeocodingResult(latitude=-1.3133,longitude=36.7852,display_name=location,confidence=.9)
 def authenticate(client):
-    response=client.post('/api/v1/auth/login',json={'email':'responder@voicerada.local','password':'test-password-123'})
+    response=client.post('/api/v1/auth/login',json={'email':'demo@example.test','password':'demo-password-123'})
     return {'Authorization':'Bearer '+response.json()['access_token']}
 def test_report_to_verification_flow(client,monkeypatch):
     monkeypatch.setattr(processing,'OpenRouterExtractionProvider',Extraction)
@@ -21,7 +21,7 @@ def test_report_to_verification_flow(client,monkeypatch):
     assert listed.status_code==200 and listed.json()['total']==1
     incident_id=listed.json()['items'][0]['id']
     detail=client.get('/api/v1/incidents/'+incident_id,headers=headers)
-    assert detail.json()['category']=='FLOODING'
+    assert detail.json()['category']=='El Niño / Flood Emergency'
     verified=client.patch('/api/v1/incidents/'+incident_id+'/verification',headers=headers,json={'status':'VERIFIED','notes':'Reviewed in test.'})
     assert verified.json()['verification_status']=='VERIFIED'
     assert verified.json()['verification_events'][0]['status']=='VERIFIED'
@@ -34,16 +34,13 @@ def test_audio_rejects_invalid_content_type(client):
     response=client.post('/api/v1/reports/audio',files={'audio':('report.txt',b'not audio','text/plain')})
     assert response.status_code==415
 
-def test_admin_can_provision_a_responder(client):
+def test_demo_responder_login_and_logout(client):
+    assert client.post('/api/v1/auth/login',json={'email':'demo@example.test','password':'wrong-password'}).status_code==401
     headers=authenticate(client)
-    created=client.post('/api/v1/auth/users',headers=headers,json={'email':'field.responder@example.test','password':'strong-test-password','role':'RESPONDER'})
-    assert created.status_code==201
-    assert created.json()['role']=='RESPONDER'
-    login=client.post('/api/v1/auth/login',json={'email':'field.responder@example.test','password':'strong-test-password'})
-    assert login.status_code==200
-    responder_headers={'Authorization':'Bearer '+login.json()['access_token']}
-    denied=client.post('/api/v1/auth/users',headers=responder_headers,json={'email':'another@example.test','password':'strong-test-password','role':'RESPONDER'})
-    assert denied.status_code==403
+    assert client.get('/api/v1/auth/me',headers=headers).json()=={'email':'demo@example.test'}
+    assert client.post('/api/v1/auth/logout',headers=headers).json()=={'status':'logged_out'}
+    assert client.get('/api/v1/incidents',headers=headers).status_code==401
+    assert client.post('/api/v1/auth/users',headers=headers,json={}).status_code==404
 
 def test_failed_processing_is_visible_and_retryable(client,monkeypatch):
     class FailingExtraction:

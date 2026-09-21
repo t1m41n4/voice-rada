@@ -34,9 +34,9 @@ Configure the USSD callback URL as:
 
 The adapter accepts the gateway's `sessionId`, `phoneNumber`, and `text` form values and returns `CON`/`END` responses. Ensure the provider dashboard has the correct callback URL for the production environment.
 
-## Initial responder account
+## Demo responder account
 
-Set `INITIAL_ADMIN_EMAIL` and a strong `INITIAL_ADMIN_PASSWORD` before first startup. The backend hashes the password with bcrypt and only creates that bootstrap admin when no account has that email.
+Set `DEMO_RESPONDER_EMAIL` and a strong `DEMO_RESPONDER_PASSWORD` before first startup. The backend hashes the password with bcrypt and creates this responder only when its email does not already exist. This account is intended for judges and demo responders; it is never created from a built-in default credential.
 
 ## Verification checklist
 

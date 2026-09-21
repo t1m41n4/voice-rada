@@ -12,7 +12,7 @@ Twilio WhatsApp submits form data to `POST /api/v1/webhooks/twilio/whatsapp`. Th
 
 Twilio IVR begins at `POST /api/v1/webhooks/twilio/voice`, asks for explicit keypad consent, and records only after consent. Its signed recording callback downloads the audio in a background task, transcribes it, and discards it.
 
-Responders first call `POST /api/v1/auth/login`, then pass `Authorization: Bearer <token>` to `GET /api/v1/incidents`, `GET /api/v1/dashboard/summary`, and `PATCH /api/v1/incidents/{id}/verification` with `{status: VERIFIED|DISMISSED|NEEDS_REVIEW, notes?}`. The incident list uses `page` and `page_size` pagination and accepts `risk_level`, `verification_status`, and `category` filters.
+Reporters do not have VoiceRada accounts. They can use the public PWA, USSD, WhatsApp, and voice-ingestion endpoints. Responders call `POST /api/v1/auth/login`, then pass `Authorization: Bearer <token>` to protected endpoints. `GET /api/v1/auth/me` returns the authenticated responder, and `POST /api/v1/auth/logout` revokes the current token. The incident list uses `page` and `page_size` pagination and accepts `risk_level`, `verification_status`, and `category` filters.
 
 `GET /api/v1/dashboard/clusters` returns transparent, location-and-time based emerging-reporting clusters. `VELOCITY_WINDOW_MINUTES` and `VELOCITY_REPORT_THRESHOLD` configure its rule.
 
@@ -22,6 +22,6 @@ Submission first creates a raw report with `RECEIVED` processing state, then pro
 
 `GET /api/v1/reports/processing` exposes the authenticated responder queue without returning raw report text. It supports a `status` filter. Only failed text reports are retryable; raw audio is deliberately discarded after processing and must be submitted again if transcription fails.
 
-Only an `ADMIN` access token can call `POST /api/v1/auth/users` to provision responder or administrator accounts. Verification and retry actions require a `RESPONDER` or `ADMIN` role.
+VoiceRada has no administrator role or user-management endpoint in this MVP. Authenticated responders can review, retry, and verify reports.
 
 Health endpoints are `/health`, `/health/live`, and `/health/ready`. Full request/response schemas are exposed at `/docs`.

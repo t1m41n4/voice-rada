@@ -5,13 +5,13 @@ from app.api.routers import auth,dashboard,events,health,incidents,reports,webho
 from app.services.realtime import event_hub
 from app.core.middleware import SafeRequestLoggingMiddleware
 from app.db.session import SessionLocal
-from app.services.users import ensure_initial_admin
+from app.services.users import ensure_demo_responder
 
 @asynccontextmanager
 async def lifespan(_:FastAPI):
     event_hub.attach_loop()
     session=SessionLocal()
-    try:ensure_initial_admin(session)
+    try:ensure_demo_responder(session)
     finally:session.close()
     yield
 app=FastAPI(title='VoiceRada API',version='0.2.0',lifespan=lifespan)

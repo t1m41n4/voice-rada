@@ -1,6 +1,24 @@
+# Environment files
 .env
+.env.*
+!.env.example
+
+# Python
 __pycache__/
+*.py[cod]
 .pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Node / Next.js
 node_modules/
 .next/
-*.pyc
+coverage/
+*.tsbuildinfo
+
+# Logs and operating-system files
+*.log
+.DS_Store
+Thumbs.db

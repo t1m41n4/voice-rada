@@ -2,6 +2,23 @@ from typing import Literal
 from pydantic import BaseModel,Field
 
 SourceType=Literal['PWA','WHATSAPP','USSD','IVR','SEED']
+IncidentCategory=Literal[
+    'El Niño / Flood Emergency',
+    'Goon Activity & Intimidation',
+    'Electoral Tension',
+    'Resource Dispute',
+]
+
+# Shared contract for provider validation, deterministic triage, database
+# constraints, seed data, and API filters.
+INCIDENT_CATEGORIES:tuple[IncidentCategory,...]=(
+    'El Niño / Flood Emergency',
+    'Goon Activity & Intimidation',
+    'Electoral Tension',
+    'Resource Dispute',
+)
+FALLBACK_INCIDENT_CATEGORY:IncidentCategory='Resource Dispute'
+
 class TextReportIn(BaseModel):
     text:str=Field(min_length=3,max_length=5000)
     location_name:str|None=Field(default=None,max_length=200)
@@ -14,10 +31,6 @@ class VerifyIn(BaseModel):
 class LoginIn(BaseModel):
     email:str
     password:str
-class ResponderUserIn(BaseModel):
-    email:str=Field(min_length=3,max_length=320)
-    password:str=Field(min_length=12,max_length=128)
-    role:Literal['RESPONDER','ADMIN']='RESPONDER'
 class UssdWebhookIn(BaseModel):
     session_id:str=Field(min_length=3,max_length=100)
     phone_number:str=Field(min_length=7,max_length=30)
@@ -30,7 +43,7 @@ class IvrWebhookIn(BaseModel):
     transcription:str|None=Field(default=None,max_length=5000)
     location_name:str|None=Field(default=None,max_length=200)
 class IncidentExtraction(BaseModel):
-    category:str
+    category:IncidentCategory
     subcategory:str|None=None
     summary:str
     reported_event:str
