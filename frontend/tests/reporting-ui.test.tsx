@@ -16,6 +16,8 @@ test('shows the privacy-first landing page and opens the reporting form', () => 
   expect(screen.getByText('See emerging needs. Verify before acting.')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Submit a report' }));
   expect(screen.getByRole('heading', { name: 'Submit a community report' })).toBeInTheDocument();
+  expect(screen.getByLabelText('Email')).toBeInTheDocument();
+  expect(screen.getByLabelText('Password')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Start recording' })).toBeInTheDocument();
 });
 

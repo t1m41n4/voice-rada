@@ -1,7 +1,7 @@
 import hashlib
 from fastapi import APIRouter,BackgroundTasks,Depends,File,Form,HTTPException,UploadFile
 from sqlalchemy.orm import Session
-from app.api.deps import require_auth,require_role
+from app.api.deps import require_auth
 from app.core.security import limit_public_request
 from app.db.session import get_db
 from app.models import RawReport
@@ -38,7 +38,7 @@ def processing_queue(status:str|None=None,limit:int=50,session:Session=Depends(g
     reports=query.order_by(RawReport.created_at.desc()).limit(safe_limit).all()
     return {'items':[{'id':raw.id,'source_type':raw.source_type,'location_name':raw.location_name,'processing_status':raw.processing_status,'processing_error':raw.processing_error,'created_at':raw.created_at,'retryable':raw.processing_status=='FAILED' and raw.raw_text!='Audio report awaiting transcription.'} for raw in reports]}
 
-@router.post('/{report_id}/retry',dependencies=[Depends(require_role('RESPONDER','ADMIN'))])
+@router.post('/{report_id}/retry',dependencies=[Depends(require_auth)])
 def retry(report_id:str,background_tasks:BackgroundTasks,session:Session=Depends(get_db)):
     raw=session.get(RawReport,report_id)
     if not raw:raise HTTPException(404,'Report not found')

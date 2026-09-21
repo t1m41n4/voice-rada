@@ -1,6 +1,6 @@
 from datetime import datetime
 import uuid
-from sqlalchemy import DateTime,Float,ForeignKey,Integer,JSON,String,Text,func
+from sqlalchemy import CheckConstraint,DateTime,Float,ForeignKey,Integer,JSON,String,Text,func
 from sqlalchemy.orm import Mapped,mapped_column,relationship
 from app.db.base import Base
 
@@ -15,7 +15,12 @@ class ResponderUser(Base):
     id:Mapped[int]=mapped_column(primary_key=True)
     email:Mapped[str]=mapped_column(String(320),unique=True)
     password_hash:Mapped[str]=mapped_column(String(128))
-    role:Mapped[str]=mapped_column(String(16),default='RESPONDER')
+    created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.now())
+
+class RevokedToken(Base):
+    __tablename__='revoked_tokens'
+    token_id:Mapped[str]=mapped_column(String(36),primary_key=True)
+    expires_at:Mapped[datetime]=mapped_column(DateTime(timezone=True))
     created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.now())
 
 class RawReport(Base):
@@ -35,12 +40,13 @@ class RawReport(Base):
 
 class Incident(Base):
     __tablename__='incidents'
+    __table_args__=(CheckConstraint("category IN ('El Niño / Flood Emergency', 'Goon Activity & Intimidation', 'Electoral Tension', 'Resource Dispute')",name='ck_incidents_category'),)
     id:Mapped[str]=mapped_column(String(36),primary_key=True,default=lambda:str(uuid.uuid4()))
     public_reference:Mapped[str]=mapped_column(String(20),unique=True)
     raw_report_id:Mapped[str|None]=mapped_column(ForeignKey('raw_reports.id'),nullable=True,unique=True)
     created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.now())
     reported_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.now())
-    category:Mapped[str]=mapped_column(String(40))
+    category:Mapped[str]=mapped_column(String(40),nullable=False)
     description:Mapped[str]=mapped_column(Text)
     source_type:Mapped[str]=mapped_column(String(24))
     risk_level:Mapped[str]=mapped_column(String(12))

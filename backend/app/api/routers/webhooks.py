@@ -53,14 +53,14 @@ async def twilio_voice_recording(request:Request,background_tasks:BackgroundTask
     return twiml('<Say>Thank you. Your report has been received as an unverified observation.</Say>')
 @router.post('/ussd',dependencies=[Depends(limit_public_request)])
 def ussd(payload:UssdWebhookIn,background_tasks:BackgroundTasks,session:Session=Depends(get_db)):
-    if not payload.description:return {'response':'CON 1. Report incident\n2. Report flooding\n3. Report safety concern\n\nReply with your description and optional location.'}
+    if not payload.description:return {'response':'CON 1. El Niño / Flood Emergency\n2. Goon Activity & Intimidation\n3. Electoral Tension\n4. Resource Dispute\n\nReply with your description and optional location.'}
     outcome=ingest(session,TextReportIn(text=payload.description,location_name=payload.location_name,phone_number=payload.phone_number,source_type='USSD',provider_message_id=payload.session_id),background_tasks)
     return {'response':'END Thank you. Your report was received as an unverified observation.','report_status':outcome['status'],'public_reference':outcome.get('public_reference')}
 @router.post('/africastalking/ussd',response_class=PlainTextResponse,dependencies=[Depends(limit_public_request)])
 async def africas_talking_ussd(request:Request,background_tasks:BackgroundTasks,session:Session=Depends(get_db)):
     form=await request.form();session_id=str(form.get('sessionId',''));phone=str(form.get('phoneNumber',''));text=str(form.get('text','')).strip()
     if not session_id or not phone:raise HTTPException(422,'Africa\'s Talking sessionId and phoneNumber are required')
-    if not text:return 'CON 1. Report incident\n2. Report flooding\n3. Report safety concern\n4. Report other'
+    if not text:return 'CON 1. El Niño / Flood Emergency\n2. Goon Activity & Intimidation\n3. Electoral Tension\n4. Resource Dispute'
     parts=text.split('*',1);description=parts[1].strip() if len(parts)>1 else text
     if len(description)<3:return 'CON Please describe what happened and include a location if possible.'
     outcome=ingest(session,TextReportIn(text=description,phone_number=phone,source_type='USSD',provider_message_id=session_id),background_tasks)
