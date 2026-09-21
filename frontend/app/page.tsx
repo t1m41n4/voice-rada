@@ -47,7 +47,8 @@ export default function Home(){
    if(!audio&&declaredText)await queueReport(body);
    setNotice(audio?'Voice upload could not be sent. Please reconnect and record again.':'You are offline. This text report is stored only in your device queue and will retry when online.');
   }
-  setText('');setAudio(null);setRecorderKey(key=>key+1);
+  // Clear all locally held report data after every send attempt, including GPS.
+  setText('');setAudio(null);setLocation('');setRecorderKey(key=>key+1);
  }
  function useMyLocation(){
   if(!navigator.geolocation){setNotice('Browser location is not available on this device.');return;}

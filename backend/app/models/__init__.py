@@ -58,6 +58,7 @@ class Incident(Base):
     longitude:Mapped[float|None]=mapped_column(Float,nullable=True)
     ai_summary:Mapped[str]=mapped_column(Text)
     ai_extraction:Mapped[dict]=mapped_column(JSON)
+    web_corroboration:Mapped[dict|None]=mapped_column(JSON,nullable=True)
     processing_status:Mapped[str]=mapped_column(String(16),default='PROCESSED')
     content_hash:Mapped[str]=mapped_column(String(64),unique=True)
     raw_report:Mapped['RawReport|None']=relationship(back_populates='incident')

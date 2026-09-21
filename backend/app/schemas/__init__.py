@@ -63,3 +63,8 @@ class GeocodingResult(BaseModel):
     longitude:float|None=None
     display_name:str|None=None
     confidence:float=Field(ge=0,le=1)
+
+class WebCorroborationAudit(BaseModel):
+    """A constrained, non-authoritative reading of recent public reporting."""
+    status:Literal['HIGH','MEDIUM','UNVERIFIED']
+    summary:str=Field(min_length=1,max_length=500)

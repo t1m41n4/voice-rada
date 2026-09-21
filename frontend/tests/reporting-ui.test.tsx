@@ -1,5 +1,5 @@
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import Home from '../app/page';
 
@@ -27,4 +27,14 @@ test('supports report text entry and a four-domain quick-select control', () => 
   fireEvent.click(electoral);
   expect(electoral).toHaveAttribute('aria-pressed', 'true');
   expect(screen.getAllByRole('button', { name: /Emergency|Intimidation|Tension|Dispute/ })).toHaveLength(4);
+});
+
+test('clears text and optional GPS after a report is accepted', async () => {
+  render(<Home />);
+  fireEvent.change(screen.getByPlaceholderText('Maji imeingia kwa nyumba kadhaa karibu na mto...'), { target: { value: 'Flooding reported near homes' } });
+  const location=screen.getByPlaceholderText('e.g. Baringo County or a nearby landmark');
+  fireEvent.change(location, { target: { value: '-1.2864, 36.8172' } });
+  fireEvent.click(screen.getByRole('button', { name: /Send anonymous report/ }));
+  await waitFor(()=>expect(screen.getByPlaceholderText('Maji imeingia kwa nyumba kadhaa karibu na mto...')).toHaveValue(''));
+  expect(location).toHaveValue('');
 });
