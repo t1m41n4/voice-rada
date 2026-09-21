@@ -27,5 +27,7 @@ def client(monkeypatch):
     monkeypatch.setattr(main,'SessionLocal',testing_session)
     monkeypatch.setattr(processing,'SessionLocal',testing_session)
     monkeypatch.setattr(processing,'set_incident_geometry',lambda *args:None)
+    # Provider calls are covered in focused tests; API-flow tests remain hermetic.
+    monkeypatch.setattr(processing,'corroborate_incident_in_background',lambda *_:None)
     with TestClient(app) as test_client:yield test_client
     app.dependency_overrides.clear()

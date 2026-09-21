@@ -19,9 +19,12 @@ def test_report_to_verification_flow(client,monkeypatch):
     headers=authenticate(client)
     listed=client.get('/api/v1/incidents?page=1&page_size=10&risk_level=SEVERE',headers=headers)
     assert listed.status_code==200 and listed.json()['total']==1
-    incident_id=listed.json()['items'][0]['id']
+    feed_item=listed.json()['items'][0]
+    assert 'description' not in feed_item
+    incident_id=feed_item['id']
     detail=client.get('/api/v1/incidents/'+incident_id,headers=headers)
     assert detail.json()['category']=='El Niño / Flood Emergency'
+    assert detail.json()['description']=='Maji imeingia kwa nyumba kadhaa.'
     verified=client.patch('/api/v1/incidents/'+incident_id+'/verification',headers=headers,json={'status':'VERIFIED','notes':'Reviewed in test.'})
     assert verified.json()['verification_status']=='VERIFIED'
     assert verified.json()['verification_events'][0]['status']=='VERIFIED'

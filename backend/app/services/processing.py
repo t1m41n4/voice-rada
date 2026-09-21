@@ -14,6 +14,17 @@ from app.services.triage import extract_and_triage
 from app.services.spatial import set_incident_geometry
 from app.db.session import SessionLocal
 from app.services.realtime import event_hub
+from app.services.corroboration import corroborate_incident_in_background
+
+def incident_created_event(incident:Incident)->dict:
+    return {
+        'type':'incident.created',
+        'incident_id':incident.id,
+        'public_reference':incident.public_reference,
+        'category':incident.category,
+        'verification_status':incident.verification_status,
+        'created_at':incident.created_at,
+    }
 
 def report_hash(payload:TextReportIn)->str:
     value='|'.join((payload.source_type,payload.text.strip().lower(),str(payload.location_name),str(payload.provider_message_id or '')))
@@ -55,7 +66,8 @@ def process_report_in_background(report_id:str):
         raw=session.get(RawReport,report_id)
         if not raw:return
         incident=process_report(session,raw)
-        event_hub.publish({'type':'incident.created','incident_id':incident.id,'public_reference':incident.public_reference})
+        event_hub.publish(incident_created_event(incident))
+        corroborate_incident_in_background(incident.id)
     except ProviderUnavailable:
         event_hub.publish({'type':'report.failed','report_id':report_id})
     finally:session.close()
@@ -74,7 +86,8 @@ def process_audio_report_in_background(report_id:str,audio:bytes,content_type:st
         incident=process_report(session,raw)
         session.add(Evidence(incident_id=incident.id,evidence_type='AUDIO_HASH_ONLY',content_hash=hashlib.sha256(audio).hexdigest()))
         session.commit()
-        event_hub.publish({'type':'incident.created','incident_id':incident.id,'public_reference':incident.public_reference})
+        event_hub.publish(incident_created_event(incident))
+        corroborate_incident_in_background(incident.id)
     except ProviderUnavailable:
         raw=session.get(RawReport,report_id)
         if raw:
