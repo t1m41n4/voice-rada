@@ -8,6 +8,12 @@ import {pendingReports,queueReport,removeQueuedReport} from './offline-queue';
 const api=process.env.NEXT_PUBLIC_API_URL||'http://localhost:8001';
 const CATEGORIES=['El Niño / Flood Emergency','Goon Activity & Intimidation','Electoral Tension','Resource Dispute'] as const;
 type Category=typeof CATEGORIES[number];
+type EmergencySupport={helplines:string[];actionLabel:string;actionUrl:string};
+const DEFAULT_SUPPORT:EmergencySupport={helplines:['National Emergency: 999 / 112','Red Cross: 1199'],actionLabel:'📥 NDOC National Crisis Resources',actionUrl:'https://www.ndoc.go.ke/downloads'};
+const CATEGORY_SUPPORT:Partial<Record<Category,EmergencySupport>>={
+ 'El Niño / Flood Emergency':{helplines:['Red Cross Emergency: 1199','National Ops: 999 / 112'],actionLabel:'📥 Flood Safety Guide (PDF)',actionUrl:'https://www.oldmutual.co.ke/om-docs/bltbef434bd34a1cb2f/Old_Mutual_Flood_Preparedness_Guide.pdf'},
+ 'Goon Activity & Intimidation':{helplines:['National Emergency: 999 / 112','Red Cross: 1199'],actionLabel:'📥 NDOC National Crisis Resources',actionUrl:'https://www.ndoc.go.ke/downloads'},
+};
 
 export default function Home(){
  const formTarget=useRef<HTMLElement>(null);
@@ -16,7 +22,9 @@ export default function Home(){
  const [location,setLocation]=useState('');
  const [category,setCategory]=useState<Category>('El Niño / Flood Emergency');
  const [notice,setNotice]=useState('');
+ const [submissionReference,setSubmissionReference]=useState('');
  const [recorderKey,setRecorderKey]=useState(0);
+ const support=CATEGORY_SUPPORT[category]||DEFAULT_SUPPORT;
 
  async function syncQueue(){
   if(!navigator.onLine)return;
@@ -31,6 +39,7 @@ export default function Home(){
 
  async function submit(event:FormEvent){
   event.preventDefault();
+  setSubmissionReference('');
   const declaredText=text.trim()?`[Reporter selected domain: ${category}]\n${text.trim()}`:'';
   const body={text:declaredText,location_name:location.trim(),source_type:'PWA' as const};
   try{
@@ -42,6 +51,8 @@ export default function Home(){
     response=await fetch(`${api}/api/v1/reports/audio`,{method:'POST',body:form});
    }else response=await fetch(`${api}/api/v1/reports/text`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
    if(!response.ok)throw Error('request failed');
+   const accepted=await response.json().catch(()=>null);
+   setSubmissionReference(typeof accepted?.report_id==='string'?accepted.report_id:'');
    setNotice('Report received. It is now queued for confidential provider processing.');
   }catch{
    if(!audio&&declaredText)await queueReport(body);
@@ -86,6 +97,7 @@ export default function Home(){
    <div className="report-heading"><div><p className="eyebrow">Anonymous report</p><h2 id="report-heading">What did you observe?</h2><p>Choose the closest domain to help responders triage quickly. This does not verify the report.</p></div><span className="secure-label">Encrypted in transit</span></div>
    <form onSubmit={submit} className="report-form">
     <fieldset><legend>Choose a report domain</legend><div className="category-chips">{CATEGORIES.map(item=><button type="button" key={item} className={`category-chip ${category===item?'is-selected':''}`} aria-pressed={category===item} onClick={()=>setCategory(item)}>{item}</button>)}</div></fieldset>
+    <aside className="emergency-support" aria-live="polite"><p>Immediate support</p><span>{support.helplines.join(' · ')}</span><a href={support.actionUrl} target="_blank" rel="noopener noreferrer">{support.actionLabel}</a></aside>
     <label htmlFor="report-text">Describe what you saw or heard <span>(no names needed)</span><textarea id="report-text" value={text} onChange={event=>setText(event.target.value)} placeholder="Maji imeingia kwa nyumba kadhaa karibu na mto..." maxLength={5000} required={!audio}/></label>
     <AudioRecorder key={recorderKey} onReady={setAudio}/>
     <div className="location-grid"><label htmlFor="report-location">Location <span>(optional)</span><input id="report-location" value={location} onChange={event=>setLocation(event.target.value)} placeholder="e.g. Baringo County or a nearby landmark" maxLength={200}/></label><button type="button" className="button-secondary location-button" onClick={useMyLocation}>Use approximate location</button></div>
@@ -99,7 +111,7 @@ export default function Home(){
    <article><span>03</span><h2>Works in the field</h2><p>Use the PWA, USSD, WhatsApp, or IVR. Text reports queue locally if your connection drops.</p></article>
   </section>
 
-  {notice&&<div className="submission-toast" role="status" aria-live="polite"><span aria-hidden="true">✓</span>{notice}</div>}
+  {notice&&<div className="submission-toast" role="status" aria-live="polite"><div><span aria-hidden="true">✓</span>{notice}</div>{submissionReference&&<div className="mt-3 border-t border-emerald-700/60 pt-3"><p className="text-xs font-bold text-emerald-100">Tracking reference: {submissionReference}</p><p className="mt-1 text-xs leading-5 text-emerald-50">{support.helplines.join(' · ')}</p><a href={support.actionUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex rounded-md bg-emerald-500 px-2.5 py-2 text-xs font-bold text-emerald-950 transition hover:bg-emerald-400">{support.actionLabel}</a></div>}</div>}
   <div className="mobile-action-drawer sm:hidden"><span>Need to report something?</span><button className="button-primary" onClick={focusReport}>Report now</button></div>
  </main>;
 }
