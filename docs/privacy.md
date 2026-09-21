@@ -8,4 +8,8 @@ Offline text reports are temporarily stored in the browser's IndexedDB on the re
 
 External AI, geocoding, speech-to-text, and Mapbox integrations are optional and disabled locally. Enabling one may disclose selected report/location data to that provider, which needs a data-processing review. Pitch shifting, if added for stored audio, reduces some voice-identification cues but does not guarantee anonymity.
 
+For the current audio endpoint, uploads are bounded to 10 MB, processed in memory, and discarded after a SHA-256 evidence hash is recorded. When configured, Groq performs the transcription; the application does not retain the raw upload. This means a failed transcription must be re-submitted unless a future encrypted-audio retention option is enabled. Production audio retention and any pitch-shifting policy need separate review.
+
 Human verification is required: AI extraction and triage are explicitly not verified facts.
+
+The IVR endpoint requires an explicit consent flag before it will process a transcription. A production telephony integration must present an understandable consent notice before recording.
