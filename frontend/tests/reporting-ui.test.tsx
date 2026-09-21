@@ -3,7 +3,6 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import Home from '../app/page';
 
-vi.mock('../app/map-panel', () => ({ MapPanel: () => <div>Map placeholder</div> }));
 vi.mock('../app/audio-recorder', () => ({ AudioRecorder: () => <button type="button">Start recording</button> }));
 
 beforeEach(() => {
@@ -11,21 +10,21 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-test('shows the privacy-first landing page and opens the reporting form', () => {
+test('shows a privacy-first public landing page with an anonymous reporting form', () => {
   render(<Home />);
-  expect(screen.getByText('See emerging needs. Verify before acting.')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Submit a report' }));
-  expect(screen.getByRole('heading', { name: 'Submit a community report' })).toBeInTheDocument();
-  expect(screen.getByLabelText('Email')).toBeInTheDocument();
-  expect(screen.getByLabelText('Password')).toBeInTheDocument();
+  expect(screen.getByText('Share the event, not your identity.')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'What did you observe?' })).toBeInTheDocument();
+  expect(screen.getByText('Zero-Knowledge Privacy Engine Active')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Responder dashboard' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Start recording' })).toBeInTheDocument();
 });
 
-test('supports report text entry and visible incident filters', () => {
+test('supports report text entry and a four-domain quick-select control', () => {
   render(<Home />);
-  fireEvent.click(screen.getByRole('button', { name: 'Submit a report' }));
   fireEvent.change(screen.getByPlaceholderText('Maji imeingia kwa nyumba kadhaa karibu na mto...'), { target: { value: 'Flooding reported near homes' } });
   expect(screen.getByDisplayValue('Flooding reported near homes')).toBeInTheDocument();
-  expect(screen.getAllByRole('combobox')).toHaveLength(2);
-  expect(screen.getByText('All risk levels')).toBeInTheDocument();
+  const electoral=screen.getByRole('button', { name: 'Electoral Tension' });
+  fireEvent.click(electoral);
+  expect(electoral).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getAllByRole('button', { name: /Emergency|Intimidation|Tension|Dispute/ })).toHaveLength(4);
 });
