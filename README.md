@@ -44,7 +44,7 @@ VoiceRada uses exactly these operational categories:
    - API documentation: <http://localhost:8001/docs>
    - Health check: <http://localhost:8001/health>
 
-The backend runs Alembic migrations and creates the configured demo responder on startup. Use the email and password configured in `.env` to enter the responder dashboard.
+The backend runs Alembic migrations and creates the configured demo responder on startup. Use a long, random demo password; changing the configured password rotates that responder's stored hash on the next backend restart.
 
 ## Demo flow
 

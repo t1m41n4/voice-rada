@@ -12,5 +12,9 @@ class InMemoryRateLimiter:
         bucket.append(now)
 
 public_limiter=InMemoryRateLimiter()
+login_limiter=InMemoryRateLimiter(limit=5,window_seconds=60)
 def limit_public_request(request:Request):
     public_limiter.check(request.client.host if request.client else 'unknown')
+
+def limit_login_attempt(request:Request):
+    login_limiter.check(request.client.host if request.client else 'unknown')
