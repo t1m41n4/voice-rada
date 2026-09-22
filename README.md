@@ -93,11 +93,3 @@ docker compose exec frontend npm test
 docker compose exec backend python -m alembic current
 docker compose logs -f backend
 ```
-
-## Project guide
-
-- [Architecture](docs/architecture.md)
-- [API notes](docs/api.md)
-- [Provider setup](docs/providers.md)
-- [Privacy](docs/privacy.md)
-- [Threat model](docs/threat-model.md)
