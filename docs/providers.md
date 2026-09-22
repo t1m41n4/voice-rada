@@ -1,6 +1,8 @@
 # Provider setup
 
-Add credentials only to your uncommitted `.env` file. Never expose server secrets through `NEXT_PUBLIC_*` variables.
+Add credentials only to your uncommitted `.env` file locally or to Railway's backend-service variables in production. Never expose server secrets through `NEXT_PUBLIC_*` variables.
+
+For Vercel, only `NEXT_PUBLIC_API_URL` and the browser-restricted `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` belong in frontend environment variables. Set the callback URL variables below only after Railway has generated the backend's public HTTPS domain.
 
 ## OpenRouter
 

@@ -66,7 +66,7 @@ Start with [`.env.example`](.env.example). Keep `.env` private and out of Git.
 
 | Purpose | Variables |
 | --- | --- |
-| Local stack | `DATABASE_URL`, `BACKEND_PORT`, `FRONTEND_PORT`, `VOICE_RADAR_SECRET` |
+| Local stack | `DATABASE_URL`, `BACKEND_PORT`, `FRONTEND_PORT`, `ALLOWED_ORIGINS`, `VOICE_RADAR_SECRET` |
 | Demo responder | `DEMO_RESPONDER_EMAIL`, `DEMO_RESPONDER_PASSWORD` |
 | AI and geocoding | `OPENROUTER_API_KEY`, `GROQ_API_KEY`, `MAPBOX_ACCESS_TOKEN` |
 | Browser map | `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` — use a Mapbox browser-restricted token only |
@@ -88,13 +88,20 @@ Read [privacy notes](docs/privacy.md) and the [threat model](docs/threat-model.m
 ## Verify the build
 
 ```powershell
-docker compose exec backend pytest
+docker compose exec backend python -m pytest
 docker compose exec frontend npm test
-docker compose exec backend alembic current
+docker compose exec backend python -m alembic current
 docker compose logs -f backend
 ```
 
-Before deploying, use a public HTTPS backend URL for Twilio and Africa's Talking callbacks, set the deployed frontend URL as the API's allowed browser origin, run migrations against the production PostGIS database, and conduct real-provider smoke tests using fictional reports only.
+## Deploy: Vercel + Railway
+
+1. In Railway, create a **PostGIS** database service (not the default PostgreSQL template) and a backend service from this repository. Set the backend service Root Directory to `backend`, then generate its public HTTPS domain. Railway's `PORT` is handled automatically by the entrypoint.
+2. In Railway backend variables, set `DATABASE_URL` as a reference to the PostGIS service URL, set `ALLOWED_ORIGINS` to the final Vercel origin, and add `VOICE_RADAR_SECRET`, demo responder credentials, and server-side provider credentials. The migration enables PostGIS before creating the geometry column.
+3. In Vercel, import the same repository with Root Directory `frontend`. Set `NEXT_PUBLIC_API_URL` to the Railway API domain (for example, `https://your-api.up.railway.app`) and `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` to a browser-restricted Mapbox token. Redeploy whenever either `NEXT_PUBLIC_*` value changes.
+4. After both domains exist, configure the exact Railway HTTPS callback URLs for Twilio WhatsApp, Twilio Voice, and Africa's Talking. Run fictional-report smoke tests before sharing the deployment.
+
+Do not add provider secrets to Vercel or use a `NEXT_PUBLIC_` prefix for them.
 
 ## Project guide
 
