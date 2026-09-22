@@ -1,13 +1,43 @@
 # Architecture
 
-The MVP is a three-container vertical slice: Next.js mobile reporting/dashboard UI, FastAPI API, and PostgreSQL/PostGIS image. The current compact schema stores incidents, non-reversible reporter tokens, and verification events. Database coordinates are scalar fields in this MVP; PostGIS is selected so a geometry column/spatial queries can be added without replacing the service.
+VoiceRada is a three-container MVP:
 
-Alembic runs the schema migration before the backend starts. The initial migration is deliberately safe for the pre-migration MVP database and records the schema version after checking for existing tables.
+```text
+Next.js PWA + responder dashboard  <-->  FastAPI API + WebSockets  <-->  PostgreSQL/PostGIS
+```
 
-`POST report → HMAC token (if supplied) → Groq transcription (audio) → OpenRouter extraction → Mapbox geocode → transparent risk rules → incident → responder verification`.
+The public PWA is intentionally separate from the protected responder dashboard. The frontend supports offline text queueing and a small service-worker app shell; the backend owns ingestion, processing, verification, provider calls, and access control.
 
-Risk rules and OpenRouter structured extraction assign exactly one operational category: `El Niño / Flood Emergency`, `Goon Activity & Intimidation`, `Electoral Tension`, or `Resource Dispute`. Highly ambiguous reports use `Resource Dispute` as a transparent operational fallback. The score is a prioritization aid, not a statement of fact. Groq performs speech-to-text, and Mapbox performs Kenyan forward geocoding when their keys are configured. Providers are isolated behind adapters and their failure leaves the raw report visibly `FAILED` rather than silently fabricating a result.
+## Incident lifecycle
 
-The dashboard detects **emerging reporting activity** when the configured number of reports fall within the configured PostGIS geographic radius and time window. It never describes such activity as confirmed, and it does not infer a cause or identify people.
+```text
+Public channel
+  -> raw report (RECEIVED)
+  -> background processing (PROCESSING)
+  -> Groq transcription when audio is supplied
+  -> OpenRouter structured extraction + transparent rule scoring
+  -> Mapbox Kenyan geocoding + PostGIS geometry
+  -> incident (PROCESSED) or recoverable failure (FAILED)
+  -> WebSocket update + non-blocking public-web corroboration
+  -> human responder verification
+```
 
-Must-have scope is text/PWA ingestion, protected feed, triage, location handling, duplicate prevention, verification, and a small IndexedDB queue for offline text reports. Queued reports retry when the browser comes back online; backend content-hash idempotency protects against a repeated delivery. Audio transformation, live telecom signature validation, WebSockets, service-worker shell caching, Alembic migrations, and production provider adapters are deferred rather than simulated.
+The categories are constrained in both the schema and database constraint to Flood Emergency, Goon Activity & Intimidation, Electoral Tension, and Resource Dispute. Ambiguous reports use an explicit operational fallback, never an invented category.
+
+## Storage and privacy boundaries
+
+- `raw_reports` retains the submitted text only for authenticated responder review and processing recovery.
+- `incidents` contains the responder-facing structured output, processing status, resolved location, PostGIS point, verification data, and bounded corroboration result.
+- Phone numbers are transformed into HMAC reporter tokens; the raw number is not retained in application records.
+- Audio is handled in memory for transcription, then discarded. `evidence` stores its SHA-256 hash only.
+- The public list and acceptance response never expose raw report text.
+
+## Integrations
+
+Provider adapters isolate OpenRouter, Groq, Mapbox, Twilio, and public-news lookup failures. A missing key, timeout, or invalid provider response creates a visible failed-processing state rather than generated placeholder data. Twilio signatures are validated, and the public-web query is restricted to a resolved place label and operational category—never the raw report text.
+
+## Realtime and spatial awareness
+
+The FastAPI WebSocket endpoint publishes incident creation, processing failure, verification, and corroboration events. The dashboard refreshes its feed and map from those events.
+
+PostGIS stores incident geometry and supports nearby-incident queries and configurable time/radius-based activity clusters. A cluster is a reporting-density signal requiring responder review, not confirmation of an event or its cause.
