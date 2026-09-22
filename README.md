@@ -94,15 +94,6 @@ docker compose exec backend python -m alembic current
 docker compose logs -f backend
 ```
 
-## Deploy: Vercel + Railway
-
-1. In Railway, create a **PostGIS** database service (not the default PostgreSQL template) and a backend service from this repository. Set the backend service Root Directory to `backend`, then generate its public HTTPS domain. Railway's `PORT` is handled automatically by the entrypoint.
-2. In Railway backend variables, set `DATABASE_URL` as a reference to the PostGIS service URL, set `ALLOWED_ORIGINS` to the final Vercel origin, and add `VOICE_RADAR_SECRET`, demo responder credentials, and server-side provider credentials. The migration enables PostGIS before creating the geometry column.
-3. In Vercel, import the same repository with Root Directory `frontend`. Set `NEXT_PUBLIC_API_URL` to the Railway API domain (for example, `https://your-api.up.railway.app`) and `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` to a browser-restricted Mapbox token. Redeploy whenever either `NEXT_PUBLIC_*` value changes.
-4. After both domains exist, configure the exact Railway HTTPS callback URLs for Twilio WhatsApp, Twilio Voice, and Africa's Talking. Run fictional-report smoke tests before sharing the deployment.
-
-Do not add provider secrets to Vercel or use a `NEXT_PUBLIC_` prefix for them.
-
 ## Project guide
 
 - [Architecture](docs/architecture.md)
