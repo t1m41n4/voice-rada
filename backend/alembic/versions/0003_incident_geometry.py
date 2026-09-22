@@ -6,6 +6,7 @@ down_revision='0002_raw_reports'
 branch_labels=None
 depends_on=None
 def upgrade():
+    op.execute('CREATE EXTENSION IF NOT EXISTS postgis')
     columns={column['name'] for column in sa.inspect(op.get_bind()).get_columns('incidents')}
     if 'geom' not in columns:
         op.execute('ALTER TABLE incidents ADD COLUMN geom geometry(Point, 4326)')
