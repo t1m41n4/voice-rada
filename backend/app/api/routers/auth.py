@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.api.deps import require_auth
 from app.core.config import VOICE_RADAR_SECRET
+from app.core.security import limit_login_attempt
 from app.db.session import get_db
 from app.models import ResponderUser,RevokedToken
 from app.schemas import LoginIn
@@ -13,7 +14,7 @@ from app.services.users import verify_password
 
 router=APIRouter(prefix='/api/v1/auth',tags=['authentication'])
 
-@router.post('/login')
+@router.post('/login',dependencies=[Depends(limit_login_attempt)])
 def login(payload:LoginIn,session:Session=Depends(get_db)):
     user=session.scalar(select(ResponderUser).where(ResponderUser.email==payload.email.lower()))
     if not user or not verify_password(payload.password,user.password_hash):
